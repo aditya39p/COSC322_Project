@@ -2,9 +2,25 @@ import java.util.ArrayList;
 public class Test{
 public static void main(String[]args){
 int[][] board = {{0, 0, 0, 2, 0, 0, 2, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {2, 0, 0, 0, 0, 0, 0, 0, 0, 2}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 1, 0, 0, 1, 0, 0, 0}};
-int[] bestMove = minimax(board, 1, 2);
-for(int i=0; i<bestMove.length; i++)
-System.out.println(bestMove[i]);
+
+int turns = 0;
+
+while(!isGameOver(board, 1) && !isGameOver(board, 2)){
+try{board = makeMove(board, minimax(board, 1, 1));}
+catch(Exception e){
+System.out.println(e.getMessage());
+e.printStackTrace();
+break;}
+try{board = makeMove(board, minimax(board, 2, 1));}
+catch(Exception e){
+System.out.println(e.getMessage());
+e.printStackTrace();
+break;}}
+
+printBoard(board);
+for(Integer[] move: getAllMoves(board, 1))
+System.out.println(move);
+
 }
 
 public static int evaluate(int[][] board, int player) {
@@ -71,42 +87,42 @@ int x;
 
 for(x=1; j+x<10; x++){
 if(board[i][j+x]==0){
-Integer[] move = {i, j+x};
+Integer[] move = {i, j, i, j+x};
 moves.add(move);}}
 
 for(x=1; i+x<10; x++){
 if(board[i+x][j]==0){
-Integer[] move = {i+x, j};
+Integer[] move = {i, j, i+x, j};
 moves.add(move);}}
 
 for(x=1; j-x>-1; x++){
 if(board[i][j-x]==0){
-Integer[] move = {i, j-x};
+Integer[] move = {i, j, i, j-x};
 moves.add(move);}}
 
 for(x=1; i-x>-1; x++){
 if(board[i-x][j]==0){
-Integer[] move = {i-x, j};
+Integer[] move = {i, j, i-x, j};
 moves.add(move);}}
 
 for(x=1; j+x<10 && i+x<10; x++){
 if(board[i+x][j+x]==0){
-Integer[] move = {i+x, j+x};
+Integer[] move = {i, j, i+x, j+x};
 moves.add(move);}}
 
 for(x=1; j+x<10 && i-x>-1; x++){
 if(board[i-x][j+x]==0){
-Integer[] move = {i-x, j+x};
+Integer[] move = {i, j, i-x, j+x};
 moves.add(move);}}
 
 for(x=1; j-x>-1 && i-x>-1; x++){
 if(board[i-x][j-x]==0){
-Integer[] move = {i-x, j-x};
+Integer[] move = {i, j, i-x, j-x};
 moves.add(move);}}
 
 for(x=1; j-x>-1 && i+x<10; x++){
 if(board[i+x][j-x]==0){
-Integer[] move = {i+x, j-x};
+Integer[] move = {i, j, i+x, j-x};
 moves.add(move);}}
 
 return moves;}
@@ -192,21 +208,9 @@ public static String encodeMove(int[][] board) {
 }
 
 public static ArrayList<Integer[]> getArrows(int[][] board, int i, int j) {
-    ArrayList<Integer[]> arrows = new ArrayList<Integer[]>();
-    // Check for possible arrow positions in each direction
-    int[] dr = {-1, -1, -1, 0, 0, 1, 1, 1};
-    int[] dc = {-1, 0, 1, -1, 1, -1, 0, 1};
-    for (int d = 0; d < 8; d++) {
-        int r = i + dr[d];
-        int c = j + dc[d];
-        while (r >= 0 && r < 10 && c >= 0 && c < 10 && board[r][c] == 0) {
-            arrows.add(new Integer[]{i, j, r, c});
-            r += dr[d];
-            c += dc[d];
-        }
-    }
-    return arrows;
-}
+ArrayList<Integer[]> arrows = new ArrayList<Integer[]>();
+arrows.addAll(getMoves(board, i, j));
+return arrows;}
 
 public static int[] minimax(int[][] board, int player, int depth) {
     int bestScore = Integer.MIN_VALUE;
@@ -214,28 +218,32 @@ public static int[] minimax(int[][] board, int player, int depth) {
 
     ArrayList<Integer[]> moves = getAllMoves(board, player);
     for (Integer[] move : moves) {
-        ArrayList<Integer[]> arrows = getArrows(board, move[0], move[1]);
+        ArrayList<Integer[]> arrows = getArrows(board, move[2], move[3]);
         for (Integer[] arrow : arrows) {
             int[][] newBoard = cloneBoard(board);
             newBoard[move[0]][move[1]] = 0;
-            newBoard[arrow[0]][arrow[1]] = 3;
-            newBoard[arrow[2]][arrow[3]] = player;
+            newBoard[arrow[0]][arrow[1]] = player;
+            newBoard[arrow[2]][arrow[3]] = 3;
 
             int[] scores = minimaxHelper(newBoard, player, depth - 1, Integer.MIN_VALUE, Integer.MAX_VALUE);
             int score = scores[2];
             if (score > bestScore) {
                 bestScore = score;
-                bestMove = new int[]{move[0], move[1], arrow[0], arrow[1], arrow[2], arrow[3]};
+                bestMove = new int[]{move[0], move[1], move[2], move[3], arrow[0], arrow[1], arrow[2], arrow[3]};
             }
         }
     }
+
+if(bestMove==null){
+for(Integer[] lastResort: getAllMoves(board, player)){
+bestMove = new int[]{lastResort[0], lastResort[1], lastResort[2], lastResort[3], lastResort[2], lastResort[3], lastResort[0], lastResort[1]};}}
 
     return bestMove;
 }
 
 public static int[] minimaxHelper(int[][] board, int player, int depth, int alpha, int beta) {
     ArrayList<Integer[]> moves = getAllMoves(board, player);
-    int[] bestMove = new int[6];
+    int[] bestMove = new int[8];
     int bestScore;
     if (player == 1) {
         bestScore = Integer.MIN_VALUE;
@@ -247,30 +255,34 @@ public static int[] minimaxHelper(int[][] board, int player, int depth, int alph
         bestScore = evaluate(board, player);
     } else {
         for (Integer[] move : moves) {
-            ArrayList<Integer[]> arrows = getArrows(board, move[0], move[1]);
+            ArrayList<Integer[]> arrows = getArrows(board, move[2], move[3]);
             for (Integer[] arrow : arrows) {
                 int[][] newBoard = cloneBoard(board);
                 newBoard[move[0]][move[1]] = 0;
-                newBoard[arrow[0]][arrow[1]] = 3;
-                newBoard[arrow[2]][arrow[3]] = player;
+                newBoard[arrow[0]][arrow[1]] = player;
+                newBoard[arrow[2]][arrow[3]] = 3;
                 int[] score = minimaxHelper(newBoard, 3 - player, depth - 1, alpha, beta);
                 if (player == 1 && score[2] > bestScore) {
                     bestScore = score[2];
                     bestMove[0] = move[0];
                     bestMove[1] = move[1];
-                    bestMove[2] = arrow[0];
-                    bestMove[3] = arrow[1];
-                    bestMove[4] = arrow[2];
-                    bestMove[5] = arrow[3];
+                    bestMove[2] = move[2];
+                    bestMove[3] = move[3];
+                    bestMove[4] = arrow[0];
+                    bestMove[5] = arrow[1];
+                    bestMove[6] = arrow[2];
+                    bestMove[7] = arrow[3];
                     alpha = Math.max(alpha, bestScore);
                 } else if (player == 2 && score[2] < bestScore) {
                     bestScore = score[2];
                     bestMove[0] = move[0];
                     bestMove[1] = move[1];
-                    bestMove[2] = arrow[0];
-                    bestMove[3] = arrow[1];
-                    bestMove[4] = arrow[2];
-                    bestMove[5] = arrow[3];
+                    bestMove[2] = move[2];
+                    bestMove[3] = move[3];
+                    bestMove[4] = arrow[0];
+                    bestMove[5] = arrow[1];
+                    bestMove[6] = arrow[2];
+                    bestMove[7] = arrow[3];
                     beta = Math.min(beta, bestScore);
                 }
                 if (beta <= alpha) {
@@ -287,5 +299,11 @@ for(int i=0; i<10; i++){
 for(int j=0; j<10; j++)
 System.out.print(board[i][j]);
 System.out.println();}}
+
+public static int[][] makeMove(int[][] board, int[] move){
+board[move[2]][move[3]] = board[move[0]][move[1]];
+board[move[0]][move[1]] = 0;
+board[move[6]][move[7]] = 3;
+return board;}
 
 }
